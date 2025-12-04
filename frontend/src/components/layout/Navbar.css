@@ -1,0 +1,46 @@
+.navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-icon {
+  font-size: 32px;
+}
+
+.navbar-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.navbar-subtitle {
+  margin-top: 8px;
+  font-size: 14px;
+  opacity: 0.9;
+  margin-left: 44px;
+}
+
+@media (max-width: 600px) {
+  .navbar-title {
+    font-size: 20px;
+  }
+  
+  .navbar-subtitle {
+    font-size: 12px;
+  }
+}
+

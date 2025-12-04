@@ -1,0 +1,73 @@
+/* GridStack 容器 - 关键：需要设置宽度和最小高度 */
+.grid-stack {
+  background: transparent;
+  width: 100%;
+  min-height: 800px;
+}
+
+/* GridStack 项目 - 确保正确定位 */
+.grid-stack-item {
+  /* GridStack 会自动设置 position: absolute */
+}
+
+/* 卡片内容容器 */
+.grid-stack-item-content.card-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.3s ease;
+  border: 1px solid var(--border-color);
+  height: 100%;
+  width: 100%;
+}
+
+.grid-stack-item-content.card-container:hover {
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 覆盖 GridStack 默认样式 */
+.grid-stack > .grid-stack-item > .grid-stack-item-content {
+  left: 10px !important;
+  right: 10px !important;
+  top: 10px !important;
+  bottom: 10px !important;
+}
+
+/* 拖动时的占位符样式 */
+.grid-stack-placeholder > .placeholder-content {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  border: 2px dashed #667eea !important;
+  border-radius: 12px;
+}
+
+/* 组件内部样式调整，使其充满卡片 */
+.grid-stack-item-content .card,
+.grid-stack-item-content .user-points-card,
+.grid-stack-item-content .total-stats-card,
+.grid-stack-item-content .bot-stats-card,
+.grid-stack-item-content .points-chart-card,
+.grid-stack-item-content .config-form {
+  height: 100%;
+  width: 100%;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  display: flex;
+  flex-direction: column;
+  border: none !important;
+  overflow: auto;
+}
+
+.chart-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+.bot-stats-list {
+  flex: 1;
+  overflow-y: auto;
+}
+

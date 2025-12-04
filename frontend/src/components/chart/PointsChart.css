@@ -1,0 +1,163 @@
+.points-chart-card {
+  margin-bottom: 20px;
+  animation: chartFadeIn 0.6s ease-out;
+}
+
+@keyframes chartFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-header {
+  margin-bottom: 20px;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 20px;
+}
+
+.chart-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.period-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.period-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.period-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #667eea;
+  min-width: 80px;
+  text-align: center;
+}
+
+.chart-type-badge {
+  font-size: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.chart-wrapper {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+}
+
+.tooltip-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.tooltip-value,
+.tooltip-count {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.tooltip-value strong,
+.tooltip-count strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.chart-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .chart-controls {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .button-group {
+    flex-wrap: wrap;
+  }
+
+  .chart-wrapper {
+    min-height: 300px;
+  }
+}
+
