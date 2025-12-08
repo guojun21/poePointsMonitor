@@ -72,16 +72,16 @@ type AggregatedStats struct {
 
 // 配置信息
 type Config struct {
-	ID                 int       `json:"id"`
-	Cookie             string    `json:"cookie"`
-	FormKey            string    `json:"form_key"`
-	TChannel           string    `json:"tchannel"`
-	Revision           string    `json:"revision"`
-	TagID              string    `json:"tag_id"`
-	SubscriptionDay    int       `json:"subscription_day"`    // 每月订阅日（1-31）
-	AutoFetchInterval  int       `json:"auto_fetch_interval"` // 自动拉取间隔（分钟）
-	AutoFetchEnabled   bool      `json:"auto_fetch_enabled"`  // 是否启用自动拉取
-	UpdatedAt          time.Time `json:"updated_at"`
+	ID                int       `json:"id"`
+	Cookie            string    `json:"cookie"`
+	FormKey           string    `json:"form_key"`
+	TChannel          string    `json:"tchannel"`
+	Revision          string    `json:"revision"`
+	TagID             string    `json:"tag_id"`
+	SubscriptionDay   int       `json:"subscription_day"`    // 每月订阅日（1-31）
+	AutoFetchInterval int       `json:"auto_fetch_interval"` // 自动拉取间隔（分钟）
+	AutoFetchEnabled  bool      `json:"auto_fetch_enabled"`  // 是否启用自动拉取
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // CORS Middleware
@@ -193,7 +193,7 @@ func insertRecord(node *PointsHistoryNode) error {
 func getSubscriptionPeriod(year, month, subscriptionDay int) (int64, int64) {
 	// 当前周期开始时间
 	periodStart := time.Date(year, time.Month(month), subscriptionDay, 0, 0, 0, 0, time.Local)
-	
+
 	// 下个周期开始时间（下个月的同一天）
 	nextMonth := month + 1
 	nextYear := year
@@ -202,7 +202,7 @@ func getSubscriptionPeriod(year, month, subscriptionDay int) (int64, int64) {
 		nextYear++
 	}
 	periodEnd := time.Date(nextYear, time.Month(nextMonth), subscriptionDay, 0, 0, 0, 0, time.Local)
-	
+
 	return periodStart.UnixMicro(), periodEnd.UnixMicro()
 }
 
@@ -212,7 +212,7 @@ func getCurrentSubscriptionPeriod(subscriptionDay int, timestamp int64) (int64, 
 	year := t.Year()
 	month := int(t.Month())
 	day := t.Day()
-	
+
 	// 如果当前日期小于订阅日，说明还在上个月的周期内
 	if day < subscriptionDay {
 		month--
@@ -221,8 +221,48 @@ func getCurrentSubscriptionPeriod(subscriptionDay int, timestamp int64) (int64, 
 			year--
 		}
 	}
-	
+
 	return getSubscriptionPeriod(year, month, subscriptionDay)
+}
+
+// 获取所有历史记录（用于表格展示）
+func getAllHistory(c *gin.Context) {
+	limit := c.DefaultQuery("limit", "10000") // 默认最多返回 10000 条
+	offset := c.DefaultQuery("offset", "0")
+
+	query := `
+		SELECT id, point_cost, creation_time, bot_name, bot_id, cursor, created_at
+		FROM points_history
+		ORDER BY creation_time DESC
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := db.Query(query, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var history []PointsHistoryNode
+	for rows.Next() {
+		var node PointsHistoryNode
+		if err := rows.Scan(
+			&node.ID,
+			&node.PointCost,
+			&node.CreationTime,
+			&node.BotName,
+			&node.BotID,
+			&node.Cursor,
+			&node.CreatedAt,
+		); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		history = append(history, node)
+	}
+
+	c.JSON(http.StatusOK, history)
 }
 
 // 获取统计数据
@@ -237,7 +277,7 @@ func getStats(c *gin.Context) {
 	if chartType == "" {
 		chartType = "discrete"
 	}
-	
+
 	offset := 0
 	if periodOffset != "" {
 		fmt.Sscanf(periodOffset, "%d", &offset)
@@ -254,7 +294,7 @@ func getStats(c *gin.Context) {
 	now := time.Now()
 	targetMonth := int(now.Month()) + offset
 	targetYear := now.Year()
-	
+
 	for targetMonth < 1 {
 		targetMonth += 12
 		targetYear--
@@ -263,9 +303,9 @@ func getStats(c *gin.Context) {
 		targetMonth -= 12
 		targetYear++
 	}
-	
+
 	periodStart, periodEnd := getSubscriptionPeriod(targetYear, targetMonth, subscriptionDay)
-	
+
 	// 如果是当前月且当前日期小于订阅日，应该用上个月的周期
 	if offset == 0 && now.Day() < subscriptionDay {
 		targetMonth--
@@ -285,12 +325,13 @@ func getStats(c *gin.Context) {
 		groupBy = "strftime('%Y-%m-%d %H:00', datetime(creation_time / 1000000, 'unixepoch', 'localtime'))"
 	case "halfday":
 		// 半天：将一天分为上午(00:00-11:59)和下午(12:00-23:59)
+		// 上午显示为 00:00，下午显示为 12:00，便于前端解析
 		groupBy = `
 			strftime('%Y-%m-%d', datetime(creation_time / 1000000, 'unixepoch', 'localtime')) || 
 			CASE 
 				WHEN CAST(strftime('%H', datetime(creation_time / 1000000, 'unixepoch', 'localtime')) AS INTEGER) < 12 
-				THEN ' 上午' 
-				ELSE ' 下午' 
+				THEN ' 00:00' 
+				ELSE ' 12:00' 
 			END
 		`
 	case "day":
@@ -358,8 +399,8 @@ func getStats(c *gin.Context) {
 	// 格式化周期标签
 	startTime := time.Unix(periodStart/1000000, 0)
 	endTime := time.Unix(periodEnd/1000000, 0)
-	
-	periodLabelStr := fmt.Sprintf("%02d.%02d - %02d.%02d", 
+
+	periodLabelStr := fmt.Sprintf("%02d.%02d - %02d.%02d",
 		startTime.Month(), startTime.Day(),
 		endTime.Month(), endTime.Day())
 
@@ -404,7 +445,7 @@ func fetchPointsHistory(c *gin.Context) {
 	currentDay := now.Day()
 	year := now.Year()
 	month := int(now.Month())
-	
+
 	// 如果当前日期小于订阅日，使用上个月
 	if currentDay < input.SubscriptionDay {
 		month--
@@ -413,7 +454,7 @@ func fetchPointsHistory(c *gin.Context) {
 			year--
 		}
 	}
-	
+
 	subscriptionStartTime := time.Date(year, time.Month(month), input.SubscriptionDay, 0, 0, 0, 0, time.Local)
 	subscriptionStartMicros := subscriptionStartTime.UnixMicro()
 
@@ -421,8 +462,8 @@ func fetchPointsHistory(c *gin.Context) {
 	// 获取当前的自动拉取设置，以免被覆盖
 	var autoFetchInterval, autoFetchEnabled int
 	db.QueryRow("SELECT COALESCE(auto_fetch_interval, 30), COALESCE(auto_fetch_enabled, 0) FROM config ORDER BY id DESC LIMIT 1").Scan(&autoFetchInterval, &autoFetchEnabled)
-	
-	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID, 
+
+	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID,
 		input.SubscriptionDay, autoFetchInterval, autoFetchEnabled); err != nil {
 		log.Printf("Failed to save config during fetch: %v", err)
 	}
@@ -686,7 +727,7 @@ func getUserPointsInfo(c *gin.Context) {
 	// 获取当前周期的开始时间（通过下次重置时间推算）
 	nextGrantTime := int64(messagePointInfo["computePointNextGrantTime"].(float64))
 	expiresTime := int64(subscription["expiresTime"].(float64))
-	
+
 	// 计算当前周期开始时间（假设是一个月前）
 	currentTime := time.Now().UnixMicro()
 	cycleStartTime := nextGrantTime - 30*24*60*60*1000000 // 30天前
@@ -715,14 +756,14 @@ func getUserPointsInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"total_allotment":     totalAllotment,
-		"current_balance":     currentBalance,
-		"used_points":         usedPoints,
-		"usage_percentage":    float64(usedPoints) / float64(totalAllotment) * 100,
-		"avg_per_day":         avgPerDay,
-		"remaining_days":      remainingDays,
-		"next_grant_time":     nextGrantTime,
-		"expires_time":        expiresTime,
+		"total_allotment":      totalAllotment,
+		"current_balance":      currentBalance,
+		"used_points":          usedPoints,
+		"usage_percentage":     float64(usedPoints) / float64(totalAllotment) * 100,
+		"avg_per_day":          avgPerDay,
+		"remaining_days":       remainingDays,
+		"next_grant_time":      nextGrantTime,
+		"expires_time":         expiresTime,
 		"subscription_product": subscription["subscriptionProduct"].(map[string]interface{})["displayName"],
 	})
 }
@@ -779,8 +820,8 @@ func getConfig(c *gin.Context) {
 		       COALESCE(auto_fetch_enabled, 0) as auto_fetch_enabled,
 		       updated_at
 		FROM config ORDER BY id DESC LIMIT 1
-	`).Scan(&config.ID, &config.Cookie, &config.FormKey, &config.TChannel, 
-		&config.Revision, &config.TagID, &config.SubscriptionDay, 
+	`).Scan(&config.ID, &config.Cookie, &config.FormKey, &config.TChannel,
+		&config.Revision, &config.TagID, &config.SubscriptionDay,
 		&config.AutoFetchInterval, &autoFetchEnabled, &config.UpdatedAt)
 
 	config.AutoFetchEnabled = autoFetchEnabled == 1
@@ -830,7 +871,7 @@ func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptio
 		    subscription_day = ?, auto_fetch_interval = ?, auto_fetch_enabled = ?, updated_at = ?
 		WHERE id = ?
 	`, cookie, formKey, tchannel, revision, tagID, subscriptionDay, autoFetchInterval, autoFetchEnabled, time.Now(), existingID)
-	
+
 	return err
 }
 
@@ -858,7 +899,7 @@ func saveConfig(c *gin.Context) {
 	}
 
 	// 使用统一的保存逻辑
-	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID, 
+	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID,
 		input.SubscriptionDay, input.AutoFetchInterval, autoFetchEnabledInt); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -874,9 +915,9 @@ func saveConfig(c *gin.Context) {
 func getLayoutConfig(c *gin.Context) {
 	var sidebarWidth int
 	var gridLayout sql.NullString
-	
+
 	err := db.QueryRow("SELECT COALESCE(sidebar_width, 400), grid_layout FROM layout_config ORDER BY id DESC LIMIT 1").Scan(&sidebarWidth, &gridLayout)
-	
+
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusOK, gin.H{
 			"sidebar_width": 400,
@@ -884,17 +925,17 @@ func getLayoutConfig(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	var layout interface{}
 	if gridLayout.Valid && gridLayout.String != "" {
 		json.Unmarshal([]byte(gridLayout.String), &layout)
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"sidebar_width": sidebarWidth,
 		"grid_layout":   layout,
@@ -907,39 +948,43 @@ func saveLayoutConfig(c *gin.Context) {
 		SidebarWidth *int        `json:"sidebar_width"`
 		GridLayout   interface{} `json:"grid_layout"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// 获取现有配置
 	var currentWidth int
 	var currentLayout sql.NullString
 	db.QueryRow("SELECT COALESCE(sidebar_width, 400), grid_layout FROM layout_config ORDER BY id DESC LIMIT 1").Scan(&currentWidth, &currentLayout)
-	
+
 	newWidth := currentWidth
 	if input.SidebarWidth != nil {
 		newWidth = *input.SidebarWidth
 		// 限制宽度范围
-		if newWidth < 300 { newWidth = 300 }
-		if newWidth > 600 { newWidth = 600 }
+		if newWidth < 300 {
+			newWidth = 300
+		}
+		if newWidth > 600 {
+			newWidth = 600
+		}
 	}
-	
+
 	newLayout := currentLayout.String
 	if input.GridLayout != nil {
 		layoutBytes, _ := json.Marshal(input.GridLayout)
 		newLayout = string(layoutBytes)
 	}
-	
-	_, err := db.Exec("INSERT OR REPLACE INTO layout_config (id, sidebar_width, grid_layout, updated_at) VALUES (1, ?, ?, ?)", 
+
+	_, err := db.Exec("INSERT OR REPLACE INTO layout_config (id, sidebar_width, grid_layout, updated_at) VALUES (1, ?, ?, ?)",
 		newWidth, newLayout, time.Now())
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"message": "布局已保存"})
 }
 
@@ -965,7 +1010,7 @@ func logFrontend(c *gin.Context) {
 			logLine += fmt.Sprintf(" | Data: %s", string(dataJSON))
 		}
 		logLine += "\n"
-		
+
 		frontendLogFile.WriteString(logLine)
 		frontendLogFile.Sync() // 立即刷新到磁盘
 	}
@@ -976,8 +1021,8 @@ func logFrontend(c *gin.Context) {
 // 获取自动拉取状态
 func getAutoFetchStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"is_running":       isAutoFetching,
-		"last_fetch_time":  lastAutoFetchTime,
+		"is_running":        isAutoFetching,
+		"last_fetch_time":   lastAutoFetchTime,
 		"last_fetch_result": lastAutoFetchResult,
 	})
 }
@@ -1004,7 +1049,7 @@ func performAutoFetch() {
 		       COALESCE(tag_id, '') as tag_id, COALESCE(subscription_day, 1) as subscription_day,
 		       COALESCE(auto_fetch_enabled, 0) as auto_fetch_enabled
 		FROM config ORDER BY id DESC LIMIT 1
-	`).Scan(&config.Cookie, &config.FormKey, &config.TChannel, 
+	`).Scan(&config.Cookie, &config.FormKey, &config.TChannel,
 		&config.Revision, &config.TagID, &config.SubscriptionDay, &autoFetchEnabled)
 
 	if err != nil || autoFetchEnabled == 0 {
@@ -1024,7 +1069,7 @@ func performAutoFetch() {
 	currentDay := now.Day()
 	year := now.Year()
 	month := int(now.Month())
-	
+
 	if currentDay < config.SubscriptionDay {
 		month--
 		if month < 1 {
@@ -1032,7 +1077,7 @@ func performAutoFetch() {
 			year--
 		}
 	}
-	
+
 	subscriptionStartTime := time.Date(year, time.Month(month), config.SubscriptionDay, 0, 0, 0, 0, time.Local)
 	subscriptionStartMicros := subscriptionStartTime.UnixMicro()
 
@@ -1058,7 +1103,7 @@ func performAutoFetch() {
 
 		jsonBody, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("POST", "https://poe.com/api/gql_POST", strings.NewReader(string(jsonBody)))
-		
+
 		req.Header.Set("accept", "*/*")
 		req.Header.Set("content-type", "application/json")
 		req.Header.Set("cookie", config.Cookie)
@@ -1209,6 +1254,7 @@ func main() {
 		api.POST("/fetch", fetchPointsHistory)
 		api.GET("/stats", getStats)
 		api.GET("/records", getLatestRecords)
+		api.GET("/history", getAllHistory)
 		api.GET("/bot-stats", getBotStats)
 		api.GET("/config", getConfig)
 		api.POST("/config", saveConfig)
@@ -1227,4 +1273,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-

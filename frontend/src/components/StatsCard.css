@@ -14,6 +14,7 @@
 
 .total-stats-card {
   animation: statsFadeIn 0.6s ease-out;
+  padding: 16px;
 }
 
 .stats-items {
@@ -27,8 +28,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: #f9fafb;
-  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 0;
 }
 
 .stat-label {
@@ -42,20 +43,21 @@
 }
 
 .stat-primary {
-  color: #667eea;
+  color: var(--poe-primary);
 }
 
 .stat-secondary {
-  color: #10b981;
+  color: var(--accent-green);
 }
 
 .stat-info {
-  color: #f59e0b;
+  color: var(--accent-orange);
 }
 
 .bot-stats-card {
   animation: statsFadeIn 0.6s ease-out 0.1s;
   animation-fill-mode: backwards;
+  padding: 16px;
 }
 
 .bot-stats-list {
@@ -69,13 +71,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: #f9fafb;
-  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 0;
   transition: all 0.2s ease;
 }
 
 .bot-stat-item:hover {
-  background: #f3f4f6;
+  background: var(--bg-hover);
   transform: translateX(4px);
 }
 
@@ -91,7 +93,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--poe-gradient);
   color: white;
   border-radius: 50%;
   font-size: 12px;
@@ -113,12 +115,12 @@
 .bot-cost {
   font-size: 16px;
   font-weight: 600;
-  color: #667eea;
+  color: var(--poe-primary);
 }
 
 .bot-count {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .empty-stats {
@@ -144,4 +146,3 @@
     grid-template-columns: 1fr;
   }
 }
-

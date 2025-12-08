@@ -2,14 +2,13 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 30px 20px;
-  min-height: calc(100vh - 200px);
+  padding: 24px 20px;
+  min-height: calc(100vh - 120px);
   box-sizing: border-box;
 }
 
 @media (max-width: 600px) {
   .page-container {
-    padding: 20px 15px;
+    padding: 16px 15px;
   }
 }
-

@@ -1,14 +1,28 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { GridStack } from 'gridstack';
 import 'gridstack/dist/gridstack.min.css';
 import './Dashboard.css';
 import logger from '../logger';
+import { WindowControls, WindowDock } from './common';
 
-const Dashboard = ({ items, onLayoutChange, savedLayout }) => {
+// 窗口配置映射
+const WINDOW_CONFIG = {
+  'user-points': { title: '用户积分', icon: '💰' },
+  'bot-stats': { title: '机器人统计', icon: '🤖' },
+  'total-stats': { title: '总体统计', icon: '📊' },
+  'chart': { title: '积分消耗趋势', icon: '📈' },
+};
+
+const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
   const gridRef = useRef(null);
   const gridInstance = useRef(null);
   const isInitialized = useRef(false);
   const widgetRefs = useRef({});
+  
+  // 窗口状态管理
+  const [minimizedWindows, setMinimizedWindows] = useState([]);
+  const [maximizedWindow, setMaximizedWindow] = useState(null);
+  const [hiddenWindows, setHiddenWindows] = useState(new Set());
 
   // 验证单个布局项是否有效
   const isValidLayoutItem = (item) => {
@@ -45,6 +59,57 @@ const Dashboard = ({ items, onLayoutChange, savedLayout }) => {
     return defaultItem;
   };
 
+  // 最小化窗口
+  const handleMinimize = useCallback((windowId) => {
+    const config = WINDOW_CONFIG[windowId] || { title: windowId, icon: '📦' };
+    setMinimizedWindows(prev => {
+      if (prev.some(w => w.id === windowId)) return prev;
+      return [...prev, { id: windowId, ...config }];
+    });
+    setHiddenWindows(prev => new Set([...prev, windowId]));
+    if (maximizedWindow === windowId) {
+      setMaximizedWindow(null);
+    }
+  }, [maximizedWindow]);
+
+  // 关闭窗口（目前功能同最小化）
+  const handleClose = useCallback((windowId) => {
+    handleMinimize(windowId);
+  }, [handleMinimize]);
+
+  // 还原窗口
+  const handleRestore = useCallback((windowId) => {
+    setMinimizedWindows(prev => prev.filter(w => w.id !== windowId));
+    setHiddenWindows(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(windowId);
+      return newSet;
+    });
+  }, []);
+
+  // 最大化/还原窗口
+  const handleMaximize = useCallback((windowId) => {
+    if (maximizedWindow === windowId) {
+      setMaximizedWindow(null);
+    } else {
+      setMaximizedWindow(windowId);
+      // 如果窗口是最小化状态，先还原
+      setMinimizedWindows(prev => prev.filter(w => w.id !== windowId));
+      setHiddenWindows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(windowId);
+        return newSet;
+      });
+    }
+  }, [maximizedWindow]);
+
+  // 刷新窗口
+  const handleRefresh = useCallback((windowId) => {
+    if (onRefresh) {
+      onRefresh(windowId);
+    }
+  }, [onRefresh]);
+
   // ref callback - 在元素挂载时立即设置属性
   const setWidgetRef = useCallback((el, item) => {
     if (el) {
@@ -57,112 +122,47 @@ const Dashboard = ({ items, onLayoutChange, savedLayout }) => {
       if (item.minW) el.setAttribute('gs-min-w', String(item.minW));
       if (item.minH) el.setAttribute('gs-min-h', String(item.minH));
       widgetRefs.current[item.id] = el;
-      
-      // 🔍 调试：打印设置的属性
-      console.log(`[DEBUG] Widget ${item.id} 属性设置:`, {
-        'gs-x': merged.x,
-        'gs-y': merged.y,
-        'gs-w': merged.w,
-        'gs-h': merged.h,
-        element: el,
-      });
     }
   }, [savedLayout]);
 
   // 初始化 GridStack
   useEffect(() => {
-    // 使用 requestAnimationFrame 确保 DOM 完全渲染
     let rafId;
     const initGrid = () => {
       if (!gridRef.current || isInitialized.current) return;
 
-      // 检查所有 widget 是否都已设置好属性
       const gridItems = gridRef.current.querySelectorAll('.grid-stack-item');
       const allReady = Array.from(gridItems).every(el => el.hasAttribute('gs-w'));
       
-      if (!allReady || gridItems.length !== items.length) {
-        // 还没准备好，继续等待
+      if (!allReady || gridItems.length !== items.filter(i => !hiddenWindows.has(i.id)).length) {
         rafId = requestAnimationFrame(initGrid);
         return;
       }
 
-      // 🔍 调试：打印初始化前的 DOM 状态
-      console.log('[DEBUG] GridStack 初始化前 DOM 状态:');
-      gridItems.forEach((el, i) => {
-        console.log(`  Widget ${i}:`, {
-          id: el.getAttribute('gs-id'),
-          x: el.getAttribute('gs-x'),
-          y: el.getAttribute('gs-y'),
-          w: el.getAttribute('gs-w'),
-          h: el.getAttribute('gs-h'),
-          style: el.getAttribute('style'),
-        });
-      });
-
-      // 🔍 调试：打印容器信息
-      const containerRect = gridRef.current.getBoundingClientRect();
-      console.log('[DEBUG] Grid 容器尺寸:', {
-        width: containerRect.width,
-        height: containerRect.height,
-        computedStyle: window.getComputedStyle(gridRef.current),
-      });
-
       logger.info('Dashboard: 初始化 GridStack', { itemCount: gridItems.length });
 
-      // 初始化 GridStack
       gridInstance.current = GridStack.init({
         column: 12,
-        cellHeight: 100,
+        cellHeight: 80,
         minRow: 1,
-        margin: 20,
+        margin: 0,
         float: true,
         disableOneColumnMode: true,
         animate: true,
         staticGrid: false,
+        disableResize: false,
+        resizable: {
+          handles: 'se'
+        },
+        compact: false,
       }, gridRef.current);
 
-      // 🔍 调试：打印 GridStack 实例信息
-      console.log('[DEBUG] GridStack 实例:', gridInstance.current);
-      console.log('[DEBUG] GridStack opts:', gridInstance.current.opts);
-
-      // 让 GridStack 识别已有的 DOM 元素
       gridItems.forEach((el) => {
-        const widget = gridInstance.current.makeWidget(el);
-        console.log('[DEBUG] makeWidget 结果:', {
-          id: el.getAttribute('gs-id'),
-          widget: widget,
-          gridstackNode: el.gridstackNode,
-        });
+        gridInstance.current.makeWidget(el);
       });
-
-      // 🔍 调试：打印初始化后的状态
-      console.log('[DEBUG] GridStack 初始化后:');
-      console.log('  - getGridItems:', gridInstance.current.getGridItems());
-      console.log('  - save():', gridInstance.current.save(false));
-      
-      // 🔍 调试：检查 CSS 变量
-      const gridStyle = window.getComputedStyle(gridRef.current);
-      console.log('[DEBUG] Grid CSS 变量:', {
-        '--gs-column-width': gridStyle.getPropertyValue('--gs-column-width'),
-        '--gs-cell-height': gridStyle.getPropertyValue('--gs-cell-height'),
-        '--gs-item-margin-top': gridStyle.getPropertyValue('--gs-item-margin-top'),
-      });
-
-      // 🔍 调试：检查第一个 widget 的计算样式
-      if (gridItems[0]) {
-        const itemStyle = window.getComputedStyle(gridItems[0]);
-        console.log('[DEBUG] 第一个 Widget 计算样式:', {
-          position: itemStyle.position,
-          left: itemStyle.left,
-          top: itemStyle.top,
-          width: itemStyle.width,
-          height: itemStyle.height,
-        });
-      }
 
       logger.info('Dashboard: GridStack 初始化完成', { widgetCount: gridItems.length });
 
-      // 监听变化并保存
       gridInstance.current.on('change', (event, changedItems) => {
         const currentLayout = gridInstance.current.save(false);
         logger.debug('Dashboard: 布局发生变化', currentLayout);
@@ -184,7 +184,7 @@ const Dashboard = ({ items, onLayoutChange, savedLayout }) => {
         isInitialized.current = false;
       }
     };
-  }, [items.length]);
+  }, [items.length, hiddenWindows.size]);
 
   // 当 savedLayout 从后端加载完成后，更新布局位置
   useEffect(() => {
@@ -212,22 +212,75 @@ const Dashboard = ({ items, onLayoutChange, savedLayout }) => {
     gridInstance.current.batchUpdate(false);
   }, [savedLayout, items]);
 
+  // 获取可见的items
+  const visibleItems = items.filter(item => !hiddenWindows.has(item.id));
+
   return (
-    <div className="grid-stack" ref={gridRef}>
-      {items.map((item) => (
-        <div 
-          key={item.id}
-          ref={(el) => setWidgetRef(el, item)}
-          className="grid-stack-item"
-        >
-          <div className="grid-stack-item-content card-container">
-            {item.content}
-          </div>
+    <>
+      {/* 最大化窗口覆盖层 */}
+      {maximizedWindow && (
+        <div className="maximized-overlay">
+          {items.filter(item => item.id === maximizedWindow).map(item => {
+            const config = WINDOW_CONFIG[item.id] || { title: item.id, icon: '📦' };
+            return (
+              <div key={item.id} className="maximized-window">
+                <WindowControls
+                  title={config.title}
+                  showTitle={true}
+                  isMaximized={true}
+                  onClose={() => handleClose(item.id)}
+                  onMinimize={() => handleMinimize(item.id)}
+                  onMaximize={() => handleMaximize(item.id)}
+                  onRefresh={() => handleRefresh(item.id)}
+                />
+                <div className="maximized-content">
+                  {item.content}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ))}
-    </div>
+      )}
+
+      {/* 正常GridStack布局 */}
+      <div 
+        className={`grid-stack ${maximizedWindow ? 'hidden' : ''}`} 
+        ref={gridRef}
+      >
+        {visibleItems.map((item) => {
+          const config = WINDOW_CONFIG[item.id] || { title: item.id, icon: '📦' };
+          return (
+            <div 
+              key={item.id}
+              ref={(el) => setWidgetRef(el, item)}
+              className="grid-stack-item"
+            >
+              <div className="grid-stack-item-content card-container">
+                <WindowControls
+                  title={config.title}
+                  showTitle={true}
+                  isMaximized={false}
+                  onClose={() => handleClose(item.id)}
+                  onMinimize={() => handleMinimize(item.id)}
+                  onMaximize={() => handleMaximize(item.id)}
+                  onRefresh={() => handleRefresh(item.id)}
+                />
+                <div className="card-body">
+                  {item.content}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 底部暂存栏 */}
+      <WindowDock 
+        minimizedWindows={minimizedWindows}
+        onRestore={handleRestore}
+      />
+    </>
   );
 };
 
 export default Dashboard;
-

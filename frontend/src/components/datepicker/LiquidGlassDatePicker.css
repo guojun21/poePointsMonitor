@@ -1,0 +1,178 @@
+.liquid-glass-date-picker {
+  position: relative;
+  z-index: 50;
+}
+
+/* 背景模糊遮罩 */
+.date-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.date-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  backdrop-filter: blur(10px);
+}
+
+.date-picker-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.date-picker-trigger.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: var(--accent-blue);
+}
+
+.date-picker-trigger svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.trigger-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ==================== 下拉框基础样式 ==================== */
+.date-picker-dropdown {
+  position: fixed;
+  width: 380px;
+  border-radius: 0;
+  overflow: hidden;
+  z-index: 999;
+  /* 外层阴影 - 双层阴影增强立体感 */
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+  /* 果冻弹性过渡 */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* 悬停时的果冻膨胀效果 */
+.date-picker-dropdown:hover {
+  border-radius: 0;
+}
+
+/* ==================== 液态玻璃核心三层结构 ==================== */
+
+/* 效果层、着色层、高光层、内容层 - 统一定位 */
+.liquidGlass-effect,
+.liquidGlass-tint,
+.liquidGlass-shine,
+.liquidGlass-content {
+  position: absolute;
+  inset: 0;
+}
+
+/* 效果层 - 背景模糊 + SVG 滤镜 */
+.liquidGlass-effect {
+  z-index: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0;
+}
+
+/* 液态玻璃模式 - 使用 SVG 滤镜 */
+.mode-liquid .liquidGlass-effect {
+  filter: url(#glass-distortion-dropdown);
+}
+
+/* 简洁毛玻璃模式 - 增强模糊，深色背景 */
+.mode-blur .liquidGlass-effect {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* 着色层 - 深色主题下用深色半透明 */
+.liquidGlass-tint {
+  z-index: 1;
+  /* 深色半透明，不是白色！ */
+  background: rgba(30, 30, 35, 0.75);
+  border-radius: 0;
+  transition: background 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.date-picker-dropdown:hover .liquidGlass-tint {
+  background: rgba(35, 35, 40, 0.78);
+}
+
+/* 高光层 - 边缘微光效果，模拟玻璃反射 */
+.liquidGlass-shine {
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 0;
+  /* 边缘高光 - 轻微的白色内阴影 */
+  box-shadow: 
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.05);
+  /* 顶部渐变高光 */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 30%
+  );
+}
+
+/* ==================== 内容层 ==================== */
+.liquidGlass-content {
+  position: relative;
+  z-index: 3;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* 浅色文字，适合深色背景 */
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ==================== 动画 ==================== */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}

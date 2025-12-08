@@ -1,0 +1,172 @@
+/* Cost 趋势折线图卡片 */
+.cost-trend-card {
+  position: relative;
+  min-width: 400px;
+  max-width: 600px;
+  flex: 1;
+  border-radius: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.cost-trend-card:hover {
+  transform: translateY(-2px);
+}
+
+/* 背景效果层 */
+.cost-trend-card .card-bg-effect {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 0;
+}
+
+.cost-trend-card:hover .card-bg-effect {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 内容层 */
+.cost-trend-card .card-content {
+  position: relative;
+  z-index: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 头部 */
+.cost-trend-card .card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cost-trend-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cost-trend-card .title-icon {
+  font-size: 16px;
+}
+
+.cost-trend-card .title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, rgba(255, 255, 255, 0.9));
+}
+
+.cost-trend-card .chart-type-badge {
+  display: inline-block;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  padding: 2px 6px;
+  border-radius: 0;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* 控制按钮组 */
+.cost-trend-card .card-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.cost-trend-card .control-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+  padding: 2px;
+}
+
+.cost-trend-card .ctrl-btn {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cost-trend-card .ctrl-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cost-trend-card .ctrl-btn.active {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.2);
+}
+
+/* 图表区域 */
+.cost-trend-card .chart-area {
+  width: 100%;
+  min-height: 180px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0;
+  padding: 8px 4px;
+}
+
+.cost-trend-card .chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+}
+
+/* Tooltip 样式 */
+.cost-trend-tooltip {
+  background: rgba(30, 30, 40, 0.95);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 0;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.cost-trend-tooltip p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.cost-trend-tooltip .tooltip-label {
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 2px;
+}
+
+.cost-trend-tooltip .tooltip-value {
+  color: #8b5cf6;
+}
+
+.cost-trend-tooltip .tooltip-value strong {
+  color: #a78bfa;
+}
+
+.cost-trend-tooltip .tooltip-count {
+  color: #10b981;
+}
+
+.cost-trend-tooltip .tooltip-count strong {
+  color: #34d399;
+}
+
+
+
+
+

@@ -1,0 +1,118 @@
+.tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(30, 30, 35, 0.98) 0%, rgba(25, 25, 30, 0.95) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-app-region: drag;
+  position: relative;
+  z-index: 100;
+}
+
+.tab-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.08) 20%, 
+    rgba(255, 255, 255, 0.08) 80%, 
+    transparent 100%
+  );
+}
+
+.tab-bar-inner {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+  padding-left: 70px; /* macOS 窗口按钮空间 */
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.tab-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tab-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+.tab-label {
+  letter-spacing: 0.3px;
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  border-radius: 0;
+  opacity: 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.tab-item.active .tab-indicator {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+  to { opacity: 1; transform: translateX(-50%) scaleX(1); }
+}
+
+.tab-bar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.title-icon {
+  font-size: 16px;
+}
+
+.title-text {
+  letter-spacing: 0.5px;
+}
+
+.tab-bar-actions {
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}

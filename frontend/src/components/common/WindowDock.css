@@ -1,0 +1,158 @@
+/* Mac风格窗口暂存栏 */
+.window-dock {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 8px 12px 12px;
+  animation: dockSlideUp 0.3s ease-out;
+}
+
+@keyframes dockSlideUp {
+  from {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.dock-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(30, 30, 35, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Dock项目 */
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.dock-item:hover {
+  transform: translateY(-8px) scale(1.15);
+}
+
+.dock-item:active {
+  transform: translateY(-4px) scale(1.1);
+}
+
+/* Dock项目预览 */
+.dock-item-preview {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.dock-item:hover .dock-item-preview {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(102, 126, 234, 0.5) 100%);
+  box-shadow: 
+    0 8px 20px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dock-item-icon {
+  font-size: 24px;
+}
+
+/* Dock项目标题 */
+.dock-item-title {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.2s ease;
+  position: absolute;
+  bottom: -20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.dock-item:hover .dock-item-title {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 活动指示器 */
+.dock-item-indicator {
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 2px;
+}
+
+/* 反射效果 */
+.dock-item::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%) scaleY(-1);
+  width: 48px;
+  height: 24px;
+  background: linear-gradient(to bottom, rgba(139, 92, 246, 0.15) 0%, transparent 100%);
+  border-radius: 12px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 弹跳动画 - 还原窗口时 */
+.dock-item.restoring {
+  animation: dockBounce 0.5s ease-out;
+}
+
+@keyframes dockBounce {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-20px) scale(1.1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+  70% { transform: translateY(-15px) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .dock-item-preview {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .dock-item-icon {
+    font-size: 20px;
+  }
+}

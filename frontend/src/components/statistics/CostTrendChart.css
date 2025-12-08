@@ -1,0 +1,197 @@
+.cost-trend-chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chart 头部 */
+.cost-trend-chart-card .chart-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cost-trend-chart-card .title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cost-trend-chart-card .chart-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cost-trend-chart-card .chart-type-badge {
+  display: inline-block;
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  padding: 2px 8px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 控制区域 */
+.cost-trend-chart-card .chart-controls {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.cost-trend-chart-card .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cost-trend-chart-card .control-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cost-trend-chart-card .button-group {
+  display: flex;
+  gap: 6px;
+}
+
+.cost-trend-chart-card .btn-sm {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cost-trend-chart-card .btn-sm:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.cost-trend-chart-card .btn-sm.active {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  color: white;
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* 图表包装器 */
+.cost-trend-chart-card .chart-wrapper {
+  width: 100%;
+  min-height: 420px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+  padding: 12px;
+  overflow: auto;
+}
+
+.cost-trend-chart-card .recharts-wrapper {
+  width: 100%;
+}
+
+/* 空状态 */
+.cost-trend-chart-card .chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  gap: 12px;
+}
+
+.cost-trend-chart-card .empty-icon {
+  font-size: 48px;
+  margin: 0;
+  opacity: 0.5;
+}
+
+.cost-trend-chart-card .empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Tooltip 样式 */
+.cost-chart-tooltip {
+  background: rgba(30, 30, 40, 0.95);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 0;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.cost-chart-tooltip p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.cost-chart-tooltip .tooltip-label {
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.cost-chart-tooltip .tooltip-value {
+  color: #8b5cf6;
+  font-size: 13px;
+}
+
+.cost-chart-tooltip .tooltip-value strong {
+  color: #a78bfa;
+}
+
+.cost-chart-tooltip .tooltip-count {
+  color: #10b981;
+  font-size: 13px;
+}
+
+.cost-chart-tooltip .tooltip-count strong {
+  color: #34d399;
+}
+
+/* Recharts 自定义样式 */
+.cost-trend-chart-card .recharts-legend-wrapper {
+  padding-top: 20px !important;
+}
+
+.cost-trend-chart-card .recharts-default-tooltip {
+  outline: none;
+}
+
+.cost-trend-chart-card .recharts-surface {
+  background: transparent;
+}
+
+
+
+
+

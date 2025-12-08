@@ -1,0 +1,133 @@
+/* ==================== 液态玻璃日期显示组件 ==================== */
+/* 深色主题适配 */
+
+.liquidGlass-wrapper.date-display {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 52px;
+  padding: 1rem 1.2rem;
+  border-radius: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 600;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: pointer;
+  /* 外层阴影 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 0 12px rgba(0, 0, 0, 0.15);
+  /* 果冻弹性过渡 */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* 悬停效果 */
+.liquidGlass-wrapper.date-display:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== 液态玻璃核心三层结构 ==================== */
+
+/* 所有层统一定位 */
+.date-display .liquidGlass-effect,
+.date-display .liquidGlass-tint,
+.date-display .liquidGlass-shine,
+.date-display .liquidGlass-text {
+  position: absolute;
+  inset: 0;
+}
+
+/* 效果层 - 背景模糊 + SVG 滤镜 */
+.date-display .liquidGlass-effect {
+  z-index: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* 液态玻璃模式 - 使用 SVG 滤镜 */
+.date-display.mode-liquid .liquidGlass-effect {
+  filter: url(#glass-distortion-date-display);
+}
+
+/* 简洁毛玻璃模式 - 增强模糊 */
+.date-display.mode-blur .liquidGlass-effect {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* 着色层 - 深色半透明 */
+.date-display .liquidGlass-tint {
+  z-index: 1;
+  background: rgba(45, 45, 50, 0.7);
+  border-radius: 0;
+  transition: background 0.3s ease;
+}
+
+.date-display:hover .liquidGlass-tint {
+  background: rgba(55, 55, 60, 0.75);
+}
+
+/* 高光层 - 边缘微光 */
+.date-display .liquidGlass-shine {
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 40%
+  );
+}
+
+/* ==================== 内容层 ==================== */
+.date-display .liquidGlass-text {
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.calendar-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.date-display:hover .calendar-icon {
+  transform: scale(1.1);
+}
+
+.date-text-value {
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* ==================== 闪烁反馈动画 ==================== */
+.flash-feedback {
+  animation: flashFeedback 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.5);
+}
+
+@keyframes flashFeedback {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.flash-feedback .liquidGlass-tint {
+  animation: flashTint 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.5);
+}
+
+@keyframes flashTint {
+  0% { background: rgba(45, 45, 50, 0.7); }
+  30% { background: rgba(70, 70, 80, 0.8); }
+  100% { background: rgba(45, 45, 50, 0.7); }
+}

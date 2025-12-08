@@ -1,0 +1,45 @@
+/* ==================== 月份选择器 ==================== */
+/* 深色主题适配 */
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.current-month {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  user-select: none;
+  flex: 1;
+  text-align: center;
+}
+
+.month-nav {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.month-nav:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.month-nav:active {
+  transform: scale(0.95);
+}

@@ -1,0 +1,105 @@
+/* ==================== 日历面板 ==================== */
+/* 深色主题适配 */
+
+.calendar-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 700;
+  padding: 0.3rem 0;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+  flex-shrink: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  transition:
+    all 0.25s cubic-bezier(0.175, 0.885, 0.32, 2.2),
+    background-color 0.3s ease,
+    color 0.2s ease;
+  position: relative;
+}
+
+.day-cell:hover:not(.other-month) {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.day-cell:active:not(.other-month) {
+  transform: scale(0.95);
+}
+
+.day-cell.other-month {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: default;
+}
+
+.day-cell.today {
+  background: rgba(52, 199, 89, 0.25);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.4);
+}
+
+.day-cell.selected {
+  background: rgba(52, 199, 89, 0.5);
+  color: white;
+  font-weight: 700;
+  transform: scale(1.08);
+  box-shadow:
+    0 3px 8px rgba(52, 199, 89, 0.4),
+    inset 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.day-cell.in-range {
+  background: rgba(52, 199, 89, 0.15);
+  transform: scale(1.02);
+}
+
+.day-cell.range-start,
+.day-cell.range-end {
+  background: rgba(52, 199, 89, 0.5);
+  color: white;
+  font-weight: 700;
+  transform: scale(1.1);
+  box-shadow:
+    0 4px 10px rgba(52, 199, 89, 0.5),
+    inset 0 0 8px rgba(255, 255, 255, 0.3);
+}

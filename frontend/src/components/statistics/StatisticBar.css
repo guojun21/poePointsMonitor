@@ -1,0 +1,419 @@
+.statistic-bar {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+/* 背景模糊遮罩 - 需要足够高的 z-index 覆盖所有内容 */
+.stat-card-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* 统计卡片通用样式 */
+.stat-card {
+  position: relative;
+  min-width: 180px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  /* 不要 overflow: hidden，否则会裁剪下拉面板 */
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* 卡片触发器 */
+.stat-card-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  backdrop-filter: blur(10px);
+  width: 100%;
+}
+
+.stat-card-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.stat-card-trigger.active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* 卡片图标 */
+.stat-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.stat-card-icon.cost {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  color: #10b981;
+}
+
+.stat-card-icon.model {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+  color: #8b5cf6;
+}
+
+.stat-card-icon.date {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+  color: #3b82f6;
+}
+
+/* 卡片信息 */
+.stat-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.stat-card-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-card-value.cost {
+  color: #10b981;
+}
+
+.stat-card-value.model {
+  color: #8b5cf6;
+}
+
+/* 展开箭头 */
+.stat-card-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.stat-card-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ==================== 展开面板 ==================== */
+.stat-card-dropdown {
+  position: fixed;
+  min-width: 320px;
+  min-height: 200px;
+  max-height: calc(100vh - 200px);
+  border-radius: 0;
+  overflow: hidden;
+  z-index: 999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.stat-card-dropdown:hover {
+  border-radius: 0;
+}
+
+/* ==================== 液态玻璃核心三层结构 ==================== */
+.stat-card-dropdown .liquidGlass-effect,
+.stat-card-dropdown .liquidGlass-tint,
+.stat-card-dropdown .liquidGlass-shine,
+.stat-card-dropdown .liquidGlass-content {
+  position: absolute;
+  inset: 0;
+}
+
+.stat-card-dropdown .liquidGlass-effect {
+  z-index: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0;
+}
+
+/* 液态玻璃模式 */
+.stat-card-dropdown.mode-liquid .liquidGlass-effect {
+  filter: url(#glass-distortion-stat);
+}
+
+/* 简洁毛玻璃模式 */
+.stat-card-dropdown.mode-blur .liquidGlass-effect {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* 着色层 */
+.stat-card-dropdown .liquidGlass-tint {
+  z-index: 1;
+  background: rgba(30, 30, 35, 0.8);
+  border-radius: 0;
+  transition: background 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.stat-card-dropdown:hover .liquidGlass-tint {
+  background: rgba(35, 35, 40, 0.82);
+}
+
+/* 高光层 */
+.stat-card-dropdown .liquidGlass-shine {
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: 
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 30%
+  );
+}
+
+/* 内容层 */
+.stat-card-dropdown .liquidGlass-content {
+  position: relative;
+  z-index: 3;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  min-height: 200px;
+}
+
+/* ==================== 统计详情样式 ==================== */
+.stat-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-detail-header .stat-card-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.stat-detail-header .stat-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stat-detail-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 统计项列表 */
+.stat-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0;
+  transition: background 0.2s ease;
+}
+
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stat-item-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stat-item-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.stat-item-value.highlight {
+  color: #10b981;
+}
+
+/* 排序切换按钮组 */
+.sort-toggle-group {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+}
+
+.sort-toggle-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-toggle-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sort-toggle-btn.active {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.15);
+}
+
+/* Model 分布样式 */
+.model-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* 滚动条样式 */
+.model-distribution::-webkit-scrollbar {
+  width: 6px;
+}
+
+.model-distribution::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0;
+}
+
+.model-distribution::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+}
+
+.model-distribution::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.model-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.model-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.model-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.model-cost {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.model-avg-cost {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.model-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.model-bar {
+  height: 100%;
+  border-radius: 0;
+  transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+/* Model 颜色 */
+.model-bar.color-0 { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.model-bar.color-1 { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.model-bar.color-2 { background: linear-gradient(90deg, #10b981, #34d399); }
+.model-bar.color-3 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.model-bar.color-4 { background: linear-gradient(90deg, #ef4444, #f87171); }
+.model-bar.color-5 { background: linear-gradient(90deg, #ec4899, #f472b6); }
+
+/* ==================== 动画 ==================== */
+@keyframes statScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-stat-in {
+  animation: statScaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+

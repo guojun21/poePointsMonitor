@@ -2,30 +2,30 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 14px;
   color: var(--text-primary);
-  background: var(--bg-card);
+  background: var(--bg-tertiary);
   transition: all 0.2s ease;
   outline: none;
 }
 
 .input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--poe-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 .input:disabled {
-  background: #f9fafb;
+  background: var(--bg-secondary);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .input::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 textarea.input {
   resize: vertical;
   font-family: inherit;
 }
-

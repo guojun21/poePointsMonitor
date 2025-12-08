@@ -1,123 +1,28 @@
 .app {
-  width: 100%;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  background: var(--bg-primary);
+  overflow: hidden;
 }
 
-.app-layout {
-  display: grid;
-  grid-template-columns: 400px 8px 1fr;
-  gap: 0;
-  align-items: start;
-}
-
-.sidebar {
-  position: sticky;
-  top: 20px;
-  padding-right: 12px;
-}
-
-.resizer {
-  width: 8px;
-  cursor: col-resize;
+.tab-content {
+  flex: 1;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  user-select: none;
-  transition: all 0.2s ease;
-  background: transparent;
-  padding: 0 4px;
-}
-
-.resizer:hover {
-  background: rgba(102, 126, 234, 0.15);
-}
-
-.resizer:active,
-.resizer.resizing {
-  background: rgba(102, 126, 234, 0.25);
-}
-
-.resizer-line {
-  width: 3px;
-  height: 100%;
-  background: #d1d5db;
-  border-radius: 2px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.resizer-line::before {
-  content: '⋮';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #9ca3af;
-  font-size: 20px;
-  font-weight: bold;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.resizer:hover .resizer-line {
-  background: #667eea;
-  width: 4px;
-}
-
-.resizer:hover .resizer-line::before {
-  opacity: 1;
-  color: #667eea;
-}
-
-.resizer:active .resizer-line,
-.resizer.resizing .resizer-line {
-  background: #667eea;
-  width: 4px;
-  box-shadow: 0 0 12px rgba(102, 126, 234, 0.6);
-}
-
-.resizer.resizing .resizer-line::before {
-  opacity: 1;
-  color: white;
-}
-
-/* 拖动时禁用文本选择 */
-.resizing {
-  user-select: none;
-}
-
-.app.resizing * {
-  user-select: none !important;
-  cursor: col-resize !important;
+  flex-direction: column;
+  position: relative; /* 让最大化覆盖层相对于此容器定位 */
 }
 
 .main-content {
-  display: flex;
-  flex-direction: column;
-  padding-left: 12px;
-  min-width: 600px;
+  flex: 1;
+  overflow: auto;
+  padding: 0 24px 24px;
 }
 
-@media (max-width: 1024px) {
-  .app-layout {
-    grid-template-columns: 1fr !important;
-  }
-
-  .resizer {
-    display: none;
-  }
-
-  .sidebar {
-    position: static;
-    padding-right: 0;
-  }
-
-  .main-content {
-    padding-left: 0;
-    min-width: auto;
-  }
+/* Dashboard 页面容器 - 移除内边距实现完全紧贴 */
+.dashboard-page {
+  padding: 0;
+  height: 100%;
+  overflow: auto;
 }
-

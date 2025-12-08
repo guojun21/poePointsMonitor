@@ -38,14 +38,25 @@ FRONTEND_DIR="$DIR/frontend"
 echo -e "${GREEN}🚀 启动后端服务...${NC}"
 cd "$BACKEND_DIR"
 
+# 为此项目使用 Go 1.25
+export PATH="/usr/local/go/bin:$PATH"
+export GOROOT="/usr/local/go"
+echo -e "${BLUE}📍 使用 Go 版本: $(go version)${NC}"
+
 # 检查 go.mod 依赖
 if [ ! -f "go.sum" ]; then
     echo -e "${BLUE}📦 首次运行，下载 Go 依赖...${NC}"
     go mod download
 fi
 
+# 检查是否需要重新编译
+if [ ! -f "poe-backend" ] || [ "main.go" -nt "poe-backend" ]; then
+    echo -e "${BLUE}🔨 编译后端...${NC}"
+    go build -o poe-backend main.go
+fi
+
 # 启动后端服务（后台运行）
-go run main.go -port 58232 > ../backend.log 2>&1 &
+./poe-backend -port 58232 > ../backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ 后端服务已启动 (PID: $BACKEND_PID)${NC}"
 

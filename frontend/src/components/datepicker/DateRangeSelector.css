@@ -1,0 +1,47 @@
+/* ==================== 日期范围选择器 ==================== */
+/* 深色主题适配 */
+
+.date-range-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.date-input-group {
+  flex: 1;
+}
+
+.date-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  padding-top: 1rem;
+}
+
+.date-separator svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 600px) {
+  .date-range-selector {
+    flex-direction: column;
+  }
+  
+  .date-separator {
+    transform: rotate(90deg);
+    padding-top: 0;
+  }
+}

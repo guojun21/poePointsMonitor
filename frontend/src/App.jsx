@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import TabBar from './components/tab-bar';
+import TableView from './components/TableView';
 import {
-  Navbar,
-  Footer,
-  PageContainer,
   ConfigForm,
   PointsChart,
   TotalStatsCard,
@@ -17,6 +16,7 @@ import './App.css';
 const API_BASE = 'http://localhost:58232/api';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState([]);
   const [botStats, setBotStats] = useState([]);
@@ -30,7 +30,7 @@ function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [periodOffset, setPeriodOffset] = useState(0);
   const [periodLabel, setPeriodLabel] = useState('');
-  const [savedLayout, setSavedLayout] = useState([]); // 保存的布局数据
+  const [savedLayout, setSavedLayout] = useState([]);
 
   // 拉取数据
   const handleFetch = async (config, fullSync = false) => {
@@ -60,7 +60,7 @@ function App() {
       logger.info('刷新统计数据...');
       await fetchStats();
       await fetchBotStats();
-      setRefreshTrigger(prev => prev + 1); // 触发积分卡片刷新
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       logger.error('拉取数据失败', { error: error.message, response: error.response?.data });
       alert('拉取数据失败：' + (error.response?.data?.error || error.message));
@@ -159,32 +159,50 @@ function App() {
     }
   };
 
+  // 刷新特定窗口的数据
+  const handleWindowRefresh = async (windowId) => {
+    logger.info(`刷新窗口数据: ${windowId}`);
+    switch (windowId) {
+      case 'user-points':
+        setRefreshTrigger(prev => prev + 1);
+        break;
+      case 'bot-stats':
+        await fetchBotStats();
+        break;
+      case 'total-stats':
+        await fetchStats();
+        break;
+      case 'chart':
+        await fetchStats();
+        break;
+      default:
+        // 刷新所有数据
+        await fetchStats();
+        await fetchBotStats();
+        setRefreshTrigger(prev => prev + 1);
+    }
+  };
+
   // 默认布局项
-  // 右侧: user-points(h=3) + stats(h=3) + chart(h=5) = 11，左侧 config(h=11)
   const dashboardItems = [
     {
-      id: 'config',
-      x: 0, y: 0, w: 4, h: 11, minW: 3, minH: 8,
-      content: <ConfigForm onFetch={handleFetch} loading={loading} />
-    },
-    {
       id: 'user-points',
-      x: 4, y: 0, w: 8, h: 3, minW: 4, minH: 2,
+      x: 0, y: 0, w: 12, h: 2, minW: 4, minH: 2,
       content: <UserPointsCard refreshTrigger={refreshTrigger} />
     },
     {
       id: 'bot-stats',
-      x: 4, y: 3, w: 4, h: 3, minW: 2, minH: 2,
+      x: 0, y: 2, w: 4, h: 3, minW: 2, minH: 2,
       content: <BotStatsCard botStats={botStats} />
     },
     {
       id: 'total-stats',
-      x: 8, y: 3, w: 4, h: 3, minW: 2, minH: 2,
+      x: 4, y: 2, w: 4, h: 3, minW: 2, minH: 2,
       content: <TotalStatsCard totalStats={totalStats} />
     },
     {
       id: 'chart',
-      x: 4, y: 6, w: 8, h: 5, minW: 4, minH: 3,
+      x: 0, y: 5, w: 12, h: 5, minW: 4, minH: 3,
       content: (
         <PointsChart
           data={chartData}
@@ -202,20 +220,35 @@ function App() {
 
   return (
     <div className="app">
-      <Navbar />
+      <TabBar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+      />
       
-      <PageContainer>
-        <Dashboard 
-          items={dashboardItems} 
-          onLayoutChange={handleLayoutChange}
-          savedLayout={savedLayout}
-        />
-      </PageContainer>
-
-      <Footer />
+      <div className="tab-content">
+        {activeTab === 'dashboard' && (
+          <div className="dashboard-page">
+            <Dashboard 
+              items={dashboardItems} 
+              onLayoutChange={handleLayoutChange}
+              savedLayout={savedLayout}
+              onRefresh={handleWindowRefresh}
+            />
+          </div>
+        )}
+        
+        {activeTab === 'table' && (
+          <TableView />
+        )}
+        
+        {activeTab === 'settings' && (
+          <div className="dashboard-page">
+            <ConfigForm onFetch={handleFetch} loading={loading} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 export default App;
-
