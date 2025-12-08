@@ -144,3 +144,6 @@ const UserPointsCard = ({ refreshTrigger }) => {
 export default UserPointsCard;
 
 
+
+
+
