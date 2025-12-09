@@ -33,3 +33,4 @@ const WindowDock = ({ minimizedWindows = [], onRestore }) => {
 };
 
 export default WindowDock;
+

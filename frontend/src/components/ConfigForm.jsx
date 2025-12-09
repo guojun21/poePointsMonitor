@@ -3,6 +3,17 @@ import { Card, Button, Input, Textarea } from './common';
 import logger from '../logger';
 import './ConfigForm.css';
 
+// 支持的货币列表
+const CURRENCIES = [
+  { code: 'USD', name: '美元 (USD)', symbol: '$' },
+  { code: 'HKD', name: '港币 (HKD)', symbol: 'HK$' },
+  { code: 'CNY', name: '人民币 (CNY)', symbol: '¥' },
+  { code: 'EUR', name: '欧元 (EUR)', symbol: '€' },
+  { code: 'GBP', name: '英镑 (GBP)', symbol: '£' },
+  { code: 'JPY', name: '日元 (JPY)', symbol: '¥' },
+  { code: 'TWD', name: '新台币 (TWD)', symbol: 'NT$' },
+];
+
 const ConfigForm = ({ onFetch, loading }) => {
   const [config, setConfig] = useState({
     cookie: '',
@@ -11,6 +22,8 @@ const ConfigForm = ({ onFetch, loading }) => {
     revision: '59988163982a4ac4be7c7e7784f006dc48cafcf5',
     tagId: '8a0df086c2034f5e97dcb01c426029ee',
     subscriptionDay: 1,
+    subscriptionAmount: 0,
+    subscriptionCurrency: 'USD',
     autoFetchInterval: 30,
     autoFetchEnabled: false,
   });
@@ -37,12 +50,16 @@ const ConfigForm = ({ onFetch, loading }) => {
             revision: data.revision || '59988163982a4ac4be7c7e7784f006dc48cafcf5',
             tagId: data.tag_id || '8a0df086c2034f5e97dcb01c426029ee',
             subscriptionDay: data.subscription_day || 1,
+            subscriptionAmount: data.subscription_amount || 0,
+            subscriptionCurrency: data.subscription_currency || 'USD',
             autoFetchInterval: data.auto_fetch_interval || 30,
             autoFetchEnabled: data.auto_fetch_enabled || false,
           };
           logger.success('ConfigForm: 配置已加载', { 
             hasCookie: !!newConfig.cookie, 
             subscriptionDay: newConfig.subscriptionDay,
+            subscriptionAmount: newConfig.subscriptionAmount,
+            subscriptionCurrency: newConfig.subscriptionCurrency,
             autoFetchEnabled: newConfig.autoFetchEnabled
           });
           setConfig(newConfig);
@@ -161,7 +178,11 @@ const ConfigForm = ({ onFetch, loading }) => {
   };
 
   const saveConfig = async () => {
-    logger.info('ConfigForm: 保存配置', { subscriptionDay: config.subscriptionDay });
+    logger.info('ConfigForm: 保存配置', { 
+      subscriptionDay: config.subscriptionDay,
+      subscriptionAmount: config.subscriptionAmount,
+      subscriptionCurrency: config.subscriptionCurrency
+    });
     try {
       const response = await fetch('http://localhost:58232/api/config', {
         method: 'POST',
@@ -173,6 +194,8 @@ const ConfigForm = ({ onFetch, loading }) => {
           revision: config.revision,
           tag_id: config.tagId,
           subscription_day: config.subscriptionDay,
+          subscription_amount: config.subscriptionAmount,
+          subscription_currency: config.subscriptionCurrency,
           auto_fetch_interval: config.autoFetchInterval,
           auto_fetch_enabled: config.autoFetchEnabled,
         }),
@@ -286,6 +309,46 @@ const ConfigForm = ({ onFetch, loading }) => {
           <span className="form-hint">
             💡 设置你的 Poe 每月订阅日（1-31），如 28 表示每月 28 号重置积分
           </span>
+        </div>
+
+        <div className="subscription-cost-section">
+          <h4 className="section-title">💰 订阅费用设置</h4>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">每月订阅金额</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={config.subscriptionAmount}
+                onChange={(e) => setConfig({ ...config, subscriptionAmount: parseFloat(e.target.value) || 0 })}
+                placeholder="例如: 399"
+              />
+              <span className="form-hint">
+                输入你每月支付的订阅费用
+              </span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">货币类型</label>
+              <select
+                value={config.subscriptionCurrency}
+                onChange={(e) => setConfig({ ...config, subscriptionCurrency: e.target.value })}
+                className="currency-select"
+              >
+                {CURRENCIES.map(currency => (
+                  <option key={currency.code} value={currency.code}>
+                    {currency.name}
+                  </option>
+                ))}
+              </select>
+              <span className="form-hint">
+                选择你支付订阅费用的货币
+              </span>
+            </div>
+          </div>
+          <div className="form-hint subscription-hint">
+            💡 设置订阅费用后，系统会自动计算你的积分消耗对应的美元价值
+          </div>
         </div>
 
         <div className="auto-fetch-section">

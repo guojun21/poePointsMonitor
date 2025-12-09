@@ -72,16 +72,38 @@ type AggregatedStats struct {
 
 // 配置信息
 type Config struct {
-	ID                int       `json:"id"`
-	Cookie            string    `json:"cookie"`
-	FormKey           string    `json:"form_key"`
-	TChannel          string    `json:"tchannel"`
-	Revision          string    `json:"revision"`
-	TagID             string    `json:"tag_id"`
-	SubscriptionDay   int       `json:"subscription_day"`    // 每月订阅日（1-31）
-	AutoFetchInterval int       `json:"auto_fetch_interval"` // 自动拉取间隔（分钟）
-	AutoFetchEnabled  bool      `json:"auto_fetch_enabled"`  // 是否启用自动拉取
-	UpdatedAt         time.Time `json:"updated_at"`
+	ID                   int       `json:"id"`
+	Cookie               string    `json:"cookie"`
+	FormKey              string    `json:"form_key"`
+	TChannel             string    `json:"tchannel"`
+	Revision             string    `json:"revision"`
+	TagID                string    `json:"tag_id"`
+	SubscriptionDay      int       `json:"subscription_day"`      // 每月订阅日（1-31）
+	SubscriptionAmount   float64   `json:"subscription_amount"`   // 每月订阅金额
+	SubscriptionCurrency string    `json:"subscription_currency"` // 订阅货币类型（如 HKD, USD, CNY）
+	AutoFetchInterval    int       `json:"auto_fetch_interval"`   // 自动拉取间隔（分钟）
+	AutoFetchEnabled     bool      `json:"auto_fetch_enabled"`    // 是否启用自动拉取
+	UpdatedAt            time.Time `json:"updated_at"`
+}
+
+// 汇率映射（相对于USD）
+var currencyRates = map[string]float64{
+	"USD": 1.0,
+	"HKD": 0.128,  // 1 HKD ≈ 0.128 USD
+	"CNY": 0.137,  // 1 CNY ≈ 0.137 USD
+	"EUR": 1.08,   // 1 EUR ≈ 1.08 USD
+	"GBP": 1.27,   // 1 GBP ≈ 1.27 USD
+	"JPY": 0.0067, // 1 JPY ≈ 0.0067 USD
+	"TWD": 0.031,  // 1 TWD ≈ 0.031 USD
+}
+
+// 将金额转换为美元
+func convertToUSD(amount float64, currency string) float64 {
+	rate, ok := currencyRates[currency]
+	if !ok {
+		rate = 1.0 // 默认当作美元处理
+	}
+	return amount * rate
 }
 
 // CORS Middleware
@@ -155,6 +177,8 @@ func initDB() {
 		revision TEXT,
 		tag_id TEXT,
 		subscription_day INTEGER DEFAULT 1,
+		subscription_amount REAL DEFAULT 0,
+		subscription_currency TEXT DEFAULT 'USD',
 		auto_fetch_interval INTEGER DEFAULT 30,
 		auto_fetch_enabled INTEGER DEFAULT 0,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -459,12 +483,14 @@ func fetchPointsHistory(c *gin.Context) {
 	subscriptionStartMicros := subscriptionStartTime.UnixMicro()
 
 	// 保存配置到数据库
-	// 获取当前的自动拉取设置，以免被覆盖
+	// 获取当前的自动拉取设置和订阅费用设置，以免被覆盖
 	var autoFetchInterval, autoFetchEnabled int
-	db.QueryRow("SELECT COALESCE(auto_fetch_interval, 30), COALESCE(auto_fetch_enabled, 0) FROM config ORDER BY id DESC LIMIT 1").Scan(&autoFetchInterval, &autoFetchEnabled)
+	var subscriptionAmount float64
+	var subscriptionCurrency string
+	db.QueryRow("SELECT COALESCE(auto_fetch_interval, 30), COALESCE(auto_fetch_enabled, 0), COALESCE(subscription_amount, 0), COALESCE(subscription_currency, 'USD') FROM config ORDER BY id DESC LIMIT 1").Scan(&autoFetchInterval, &autoFetchEnabled, &subscriptionAmount, &subscriptionCurrency)
 
 	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID,
-		input.SubscriptionDay, autoFetchInterval, autoFetchEnabled); err != nil {
+		input.SubscriptionDay, subscriptionAmount, subscriptionCurrency, autoFetchInterval, autoFetchEnabled); err != nil {
 		log.Printf("Failed to save config during fetch: %v", err)
 	}
 
@@ -812,28 +838,42 @@ func getBotStats(c *gin.Context) {
 func getConfig(c *gin.Context) {
 	var config Config
 	var autoFetchEnabled int
+	var subscriptionCurrency sql.NullString
+	var subscriptionAmount sql.NullFloat64
 	err := db.QueryRow(`
 		SELECT id, COALESCE(cookie, '') as cookie, COALESCE(form_key, '') as form_key, 
 		       COALESCE(tchannel, '') as tchannel, COALESCE(revision, '') as revision, 
 		       COALESCE(tag_id, '') as tag_id, COALESCE(subscription_day, 1) as subscription_day,
+		       subscription_amount, subscription_currency,
 		       COALESCE(auto_fetch_interval, 30) as auto_fetch_interval,
 		       COALESCE(auto_fetch_enabled, 0) as auto_fetch_enabled,
 		       updated_at
 		FROM config ORDER BY id DESC LIMIT 1
 	`).Scan(&config.ID, &config.Cookie, &config.FormKey, &config.TChannel,
 		&config.Revision, &config.TagID, &config.SubscriptionDay,
+		&subscriptionAmount, &subscriptionCurrency,
 		&config.AutoFetchInterval, &autoFetchEnabled, &config.UpdatedAt)
 
 	config.AutoFetchEnabled = autoFetchEnabled == 1
+	if subscriptionAmount.Valid {
+		config.SubscriptionAmount = subscriptionAmount.Float64
+	}
+	if subscriptionCurrency.Valid && subscriptionCurrency.String != "" {
+		config.SubscriptionCurrency = subscriptionCurrency.String
+	} else {
+		config.SubscriptionCurrency = "USD"
+	}
 
 	if err == sql.ErrNoRows {
 		// 返回空配置
 		c.JSON(http.StatusOK, Config{
-			Revision:          "59988163982a4ac4be7c7e7784f006dc48cafcf5",
-			TagID:             "8a0df086c2034f5e97dcb01c426029ee",
-			SubscriptionDay:   1,
-			AutoFetchInterval: 30,
-			AutoFetchEnabled:  false,
+			Revision:             "59988163982a4ac4be7c7e7784f006dc48cafcf5",
+			TagID:                "8a0df086c2034f5e97dcb01c426029ee",
+			SubscriptionDay:      1,
+			SubscriptionAmount:   0,
+			SubscriptionCurrency: "USD",
+			AutoFetchInterval:    30,
+			AutoFetchEnabled:     false,
 		})
 		return
 	}
@@ -847,7 +887,7 @@ func getConfig(c *gin.Context) {
 }
 
 // 内部辅助函数：保存配置到数据库（处理插入或更新）
-func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptionDay, autoFetchInterval, autoFetchEnabled int) error {
+func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptionDay int, subscriptionAmount float64, subscriptionCurrency string, autoFetchInterval, autoFetchEnabled int) error {
 	var existingID int
 	err := db.QueryRow("SELECT id FROM config ORDER BY id DESC LIMIT 1").Scan(&existingID)
 
@@ -856,9 +896,10 @@ func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptio
 			// 不存在配置，执行插入
 			_, err = db.Exec(`
 				INSERT INTO config (cookie, form_key, tchannel, revision, tag_id, subscription_day, 
+				                    subscription_amount, subscription_currency,
 				                    auto_fetch_interval, auto_fetch_enabled, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`, cookie, formKey, tchannel, revision, tagID, subscriptionDay, autoFetchInterval, autoFetchEnabled, time.Now())
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`, cookie, formKey, tchannel, revision, tagID, subscriptionDay, subscriptionAmount, subscriptionCurrency, autoFetchInterval, autoFetchEnabled, time.Now())
 		}
 		// 如果是其他错误，直接返回
 		return err
@@ -868,9 +909,10 @@ func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptio
 	_, err = db.Exec(`
 		UPDATE config 
 		SET cookie = ?, form_key = ?, tchannel = ?, revision = ?, tag_id = ?, 
-		    subscription_day = ?, auto_fetch_interval = ?, auto_fetch_enabled = ?, updated_at = ?
+		    subscription_day = ?, subscription_amount = ?, subscription_currency = ?,
+		    auto_fetch_interval = ?, auto_fetch_enabled = ?, updated_at = ?
 		WHERE id = ?
-	`, cookie, formKey, tchannel, revision, tagID, subscriptionDay, autoFetchInterval, autoFetchEnabled, time.Now(), existingID)
+	`, cookie, formKey, tchannel, revision, tagID, subscriptionDay, subscriptionAmount, subscriptionCurrency, autoFetchInterval, autoFetchEnabled, time.Now(), existingID)
 
 	return err
 }
@@ -878,19 +920,26 @@ func upsertConfig(cookie, formKey, tchannel, revision, tagID string, subscriptio
 // 保存/更新配置
 func saveConfig(c *gin.Context) {
 	var input struct {
-		Cookie            string `json:"cookie"`
-		FormKey           string `json:"form_key"`
-		TChannel          string `json:"tchannel"`
-		Revision          string `json:"revision"`
-		TagID             string `json:"tag_id"`
-		SubscriptionDay   int    `json:"subscription_day"`
-		AutoFetchInterval int    `json:"auto_fetch_interval"`
-		AutoFetchEnabled  bool   `json:"auto_fetch_enabled"`
+		Cookie               string  `json:"cookie"`
+		FormKey              string  `json:"form_key"`
+		TChannel             string  `json:"tchannel"`
+		Revision             string  `json:"revision"`
+		TagID                string  `json:"tag_id"`
+		SubscriptionDay      int     `json:"subscription_day"`
+		SubscriptionAmount   float64 `json:"subscription_amount"`
+		SubscriptionCurrency string  `json:"subscription_currency"`
+		AutoFetchInterval    int     `json:"auto_fetch_interval"`
+		AutoFetchEnabled     bool    `json:"auto_fetch_enabled"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// 默认货币为 USD
+	if input.SubscriptionCurrency == "" {
+		input.SubscriptionCurrency = "USD"
 	}
 
 	autoFetchEnabledInt := 0
@@ -900,7 +949,8 @@ func saveConfig(c *gin.Context) {
 
 	// 使用统一的保存逻辑
 	if err := upsertConfig(input.Cookie, input.FormKey, input.TChannel, input.Revision, input.TagID,
-		input.SubscriptionDay, input.AutoFetchInterval, autoFetchEnabledInt); err != nil {
+		input.SubscriptionDay, input.SubscriptionAmount, input.SubscriptionCurrency,
+		input.AutoFetchInterval, autoFetchEnabledInt); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -1024,6 +1074,74 @@ func getAutoFetchStatus(c *gin.Context) {
 		"is_running":        isAutoFetching,
 		"last_fetch_time":   lastAutoFetchTime,
 		"last_fetch_result": lastAutoFetchResult,
+	})
+}
+
+// 获取订阅费用统计信息
+func getSubscriptionCostInfo(c *gin.Context) {
+	// 获取配置
+	var subscriptionDay int
+	var subscriptionAmount float64
+	var subscriptionCurrency string
+	err := db.QueryRow(`
+		SELECT COALESCE(subscription_day, 1), COALESCE(subscription_amount, 0), COALESCE(subscription_currency, 'USD')
+		FROM config ORDER BY id DESC LIMIT 1
+	`).Scan(&subscriptionDay, &subscriptionAmount, &subscriptionCurrency)
+
+	if err != nil && err != sql.ErrNoRows {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 计算当前订阅周期
+	now := time.Now()
+	year := now.Year()
+	month := int(now.Month())
+	if now.Day() < subscriptionDay {
+		month--
+		if month < 1 {
+			month = 12
+			year--
+		}
+	}
+	periodStart, periodEnd := getSubscriptionPeriod(year, month, subscriptionDay)
+
+	// 获取本周期的总积分消耗
+	var totalPointsUsed int
+	db.QueryRow(`
+		SELECT COALESCE(SUM(point_cost), 0)
+		FROM points_history
+		WHERE creation_time >= ? AND creation_time < ?
+	`, periodStart, periodEnd).Scan(&totalPointsUsed)
+
+	// 将订阅费用转换为美元
+	subscriptionAmountUSD := convertToUSD(subscriptionAmount, subscriptionCurrency)
+
+	// 获取用户积分信息以计算积分对应的美元价值
+	// Poe 的积分兑换比例：根据订阅类型，一般是 1M 积分 = 订阅费用
+	// 我们使用配置的订阅费用和积分总额来计算单积分价值
+
+	// 获取用户的总积分配额（如果有）
+	var totalAllotment int64
+	totalAllotment = 1000000 // 默认 100 万积分
+
+	// 计算每积分对应的美元价值
+	pointValueUSD := subscriptionAmountUSD / float64(totalAllotment)
+
+	// 计算已使用积分对应的美元价值
+	usedPointsValueUSD := float64(totalPointsUsed) * pointValueUSD
+
+	c.JSON(http.StatusOK, gin.H{
+		"subscription_day":        subscriptionDay,
+		"subscription_amount":     subscriptionAmount,
+		"subscription_currency":   subscriptionCurrency,
+		"subscription_amount_usd": subscriptionAmountUSD,
+		"period_start":            periodStart,
+		"period_end":              periodEnd,
+		"total_points_used":       totalPointsUsed,
+		"point_value_usd":         pointValueUSD,
+		"used_points_value_usd":   usedPointsValueUSD,
+		"currency_rates":          currencyRates,
 	})
 }
 
@@ -1260,6 +1378,7 @@ func main() {
 		api.POST("/config", saveConfig)
 		api.GET("/auto-fetch-status", getAutoFetchStatus)
 		api.GET("/user-points-info", getUserPointsInfo)
+		api.GET("/subscription-cost-info", getSubscriptionCostInfo)
 		api.GET("/layout", getLayoutConfig)
 		api.POST("/layout", saveLayoutConfig)
 		api.POST("/log", logFrontend)

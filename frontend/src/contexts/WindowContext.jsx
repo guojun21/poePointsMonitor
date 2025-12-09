@@ -106,3 +106,4 @@ export const useWindowManager = () => {
 };
 
 export default WindowContext;
+

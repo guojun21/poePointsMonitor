@@ -106,3 +106,4 @@ const WindowControls = ({
 };
 
 export default WindowControls;
+

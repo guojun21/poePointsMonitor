@@ -5,6 +5,7 @@ import './UserPointsCard.css';
 
 const UserPointsCard = ({ refreshTrigger }) => {
   const [pointsInfo, setPointsInfo] = useState(null);
+  const [subscriptionCostInfo, setSubscriptionCostInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchPointsInfo = async () => {
@@ -29,9 +30,22 @@ const UserPointsCard = ({ refreshTrigger }) => {
     }
   };
 
+  const fetchSubscriptionCostInfo = async () => {
+    logger.api('UserPointsCard: 获取订阅费用信息');
+    try {
+      const response = await fetch('http://localhost:58232/api/subscription-cost-info');
+      const data = await response.json();
+      logger.data('UserPointsCard: 收到订阅费用数据', data);
+      setSubscriptionCostInfo(data);
+    } catch (error) {
+      logger.error('UserPointsCard: 获取订阅费用信息失败', error.message);
+    }
+  };
+
   useEffect(() => {
     logger.debug('UserPointsCard: refreshTrigger 变化', { refreshTrigger });
     fetchPointsInfo();
+    fetchSubscriptionCostInfo();
   }, [refreshTrigger]);
 
   if (loading) {
@@ -67,6 +81,41 @@ const UserPointsCard = ({ refreshTrigger }) => {
     if (days > 15) return '#10b981';
     if (days > 7) return '#f59e0b';
     return '#ef4444';
+  };
+
+  // 格式化美元金额
+  const formatUSD = (amount) => {
+    if (amount === undefined || amount === null) return '$0.00';
+    return `$${amount.toFixed(2)}`;
+  };
+
+  // 获取货币符号
+  const getCurrencySymbol = (currency) => {
+    const symbols = {
+      'USD': '$',
+      'HKD': 'HK$',
+      'CNY': '¥',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'TWD': 'NT$',
+    };
+    return symbols[currency] || currency;
+  };
+
+  // 计算基于已使用积分的美元花销
+  const calculateUsedPointsValueUSD = () => {
+    if (!pointsInfo || !subscriptionCostInfo || !subscriptionCostInfo.subscription_amount) {
+      return null;
+    }
+    // 使用用户积分总额和已使用积分计算
+    const totalAllotment = pointsInfo.total_allotment || 1000000;
+    const usedPoints = pointsInfo.used_points || 0;
+    const subscriptionAmountUSD = subscriptionCostInfo.subscription_amount_usd || 0;
+    
+    // 每积分对应的美元价值
+    const pointValueUSD = subscriptionAmountUSD / totalAllotment;
+    return usedPoints * pointValueUSD;
   };
 
   return (
@@ -137,6 +186,42 @@ const UserPointsCard = ({ refreshTrigger }) => {
           </div>
         </div>
       </div>
+
+      {/* 费用统计 - 只有配置了订阅费用才显示 */}
+      {subscriptionCostInfo && subscriptionCostInfo.subscription_amount > 0 && (
+        <div className="cost-section">
+          <div className="cost-header">
+            <span className="cost-title">💵 费用统计</span>
+            <span className="cost-subscription">
+              {getCurrencySymbol(subscriptionCostInfo.subscription_currency)}
+              {subscriptionCostInfo.subscription_amount}/月
+              <span className="cost-usd-hint">
+                (≈ {formatUSD(subscriptionCostInfo.subscription_amount_usd)})
+              </span>
+            </span>
+          </div>
+          <div className="cost-grid">
+            <div className="cost-item">
+              <div className="cost-value cost-used">
+                {formatUSD(calculateUsedPointsValueUSD())}
+              </div>
+              <div className="cost-label">已消费 (USD)</div>
+            </div>
+            <div className="cost-item">
+              <div className="cost-value cost-remaining">
+                {formatUSD(subscriptionCostInfo.subscription_amount_usd - (calculateUsedPointsValueUSD() || 0))}
+              </div>
+              <div className="cost-label">剩余价值 (USD)</div>
+            </div>
+            <div className="cost-item">
+              <div className="cost-value cost-per-point">
+                ${subscriptionCostInfo.point_value_usd?.toFixed(6) || '0.000000'}
+              </div>
+              <div className="cost-label">单积分价值</div>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

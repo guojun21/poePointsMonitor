@@ -18,30 +18,33 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
   const gridInstance = useRef(null);
   const isInitialized = useRef(false);
   const widgetRefs = useRef({});
+  // 用于触发重新渲染的 key - 使用 savedLayout 的长度作为初始值
+  // 这确保了当组件重新挂载时，如果 savedLayout 有效，key 就是非零值
+  const [gridKey, setGridKey] = useState(() => isValidLayout(savedLayout) ? 1 : 0);
+  
+  // 验证单个布局项是否有效（提前声明供 useState 使用）
+  function isValidLayoutItem(item) {
+    return item && 
+      typeof item.w === 'number' && item.w >= 1 &&
+      typeof item.h === 'number' && item.h >= 1 &&
+      typeof item.x === 'number' && item.x >= 0 &&
+      typeof item.y === 'number' && item.y >= 0;
+  }
+
+  // 验证布局数据是否有效（提前声明供 useState 使用）
+  function isValidLayout(layout) {
+    if (!layout || !Array.isArray(layout) || layout.length === 0) {
+      return false;
+    }
+    return layout.some(item => isValidLayoutItem(item));
+  }
   
   // 窗口状态管理
   const [minimizedWindows, setMinimizedWindows] = useState([]);
   const [maximizedWindow, setMaximizedWindow] = useState(null);
   const [hiddenWindows, setHiddenWindows] = useState(new Set());
 
-  // 验证单个布局项是否有效
-  const isValidLayoutItem = (item) => {
-    return item && 
-      typeof item.w === 'number' && item.w >= 1 &&
-      typeof item.h === 'number' && item.h >= 1 &&
-      typeof item.x === 'number' && item.x >= 0 &&
-      typeof item.y === 'number' && item.y >= 0;
-  };
-
-  // 验证布局数据是否有效
-  const isValidLayout = (layout) => {
-    if (!layout || !Array.isArray(layout) || layout.length === 0) {
-      return false;
-    }
-    return layout.some(item => isValidLayoutItem(item));
-  };
-
-  // 获取合并后的布局项
+  // 获取合并后的布局项（直接使用 savedLayout prop）
   const getMergedItem = (defaultItem) => {
     if (!isValidLayout(savedLayout)) {
       return defaultItem;
@@ -111,7 +114,8 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
   }, [onRefresh]);
 
   // ref callback - 在元素挂载时立即设置属性
-  const setWidgetRef = useCallback((el, item) => {
+  // 注意：这里不用 useCallback 包装，确保每次渲染都能获取最新的 savedLayout
+  const setWidgetRef = (el, item) => {
     if (el) {
       const merged = getMergedItem(item);
       el.setAttribute('gs-id', item.id);
@@ -123,6 +127,39 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
       if (item.minH) el.setAttribute('gs-min-h', String(item.minH));
       widgetRefs.current[item.id] = el;
     }
+  };
+
+  // 标记是否是组件的首次挂载
+  const isFirstMount = useRef(true);
+  
+  // 当 savedLayout 从空变为有效时，增加 gridKey 强制重新渲染
+  const prevSavedLayoutRef = useRef(null); // 初始为 null，而不是 savedLayout
+  useEffect(() => {
+    // 首次挂载时，如果 savedLayout 已经有效，不需要重建（因为 DOM 属性已经正确设置）
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      prevSavedLayoutRef.current = savedLayout;
+      return;
+    }
+    
+    const prevLayout = prevSavedLayoutRef.current;
+    const prevValid = isValidLayout(prevLayout);
+    const currValid = isValidLayout(savedLayout);
+    
+    // 如果之前无效现在有效，说明布局刚加载完成，需要重建 grid
+    if (!prevValid && currValid) {
+      logger.info('Dashboard: savedLayout 首次加载完成，重建 Grid');
+      // 先销毁现有 grid
+      if (gridInstance.current) {
+        gridInstance.current.destroy(false);
+        gridInstance.current = null;
+        isInitialized.current = false;
+      }
+      // 触发重新渲染
+      setGridKey(k => k + 1);
+    }
+    
+    prevSavedLayoutRef.current = savedLayout;
   }, [savedLayout]);
 
   // 初始化 GridStack
@@ -139,7 +176,7 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
         return;
       }
 
-      logger.info('Dashboard: 初始化 GridStack', { itemCount: gridItems.length });
+      logger.info('Dashboard: 初始化 GridStack', { itemCount: gridItems.length, gridKey });
 
       gridInstance.current = GridStack.init({
         column: 12,
@@ -184,33 +221,7 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
         isInitialized.current = false;
       }
     };
-  }, [items.length, hiddenWindows.size]);
-
-  // 当 savedLayout 从后端加载完成后，更新布局位置
-  useEffect(() => {
-    if (!gridInstance.current || !isInitialized.current) return;
-    if (!isValidLayout(savedLayout)) {
-      return;
-    }
-
-    logger.info('Dashboard: 应用保存的布局位置');
-    
-    gridInstance.current.batchUpdate();
-    items.forEach((defaultItem) => {
-      const savedItem = savedLayout.find(s => s.id === defaultItem.id);
-      const el = widgetRefs.current[defaultItem.id];
-      
-      if (el && savedItem && isValidLayoutItem(savedItem)) {
-        gridInstance.current.update(el, {
-          x: savedItem.x,
-          y: savedItem.y,
-          w: Math.max(savedItem.w, defaultItem.minW || 1),
-          h: Math.max(savedItem.h, defaultItem.minH || 1),
-        });
-      }
-    });
-    gridInstance.current.batchUpdate(false);
-  }, [savedLayout, items]);
+  }, [items.length, hiddenWindows.size, gridKey]);
 
   // 获取可见的items
   const visibleItems = items.filter(item => !hiddenWindows.has(item.id));
@@ -244,6 +255,7 @@ const Dashboard = ({ items, onLayoutChange, savedLayout, onRefresh }) => {
 
       {/* 正常GridStack布局 */}
       <div 
+        key={gridKey}
         className={`grid-stack ${maximizedWindow ? 'hidden' : ''}`} 
         ref={gridRef}
       >
