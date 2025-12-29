@@ -47,3 +47,11 @@ lerna-debug.log*
 # Electron
 out/
 
+node_modules/
+dist/
+build/
+*.log
+__pycache__/
+*.pyc
+.env
+.idea/
